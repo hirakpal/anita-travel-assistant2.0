@@ -1,0 +1,47 @@
+{
+  "trips": [
+    {
+      "trip_id": "demo-001",
+      "label": "Bengaluru -> Jaipur (pre-trip planning)",
+      "origin": "Bengaluru",
+      "destination": "Jaipur",
+      "arrival_time": "2026-07-20T18:00:00",
+      "departure_time": "2026-07-20T06:00:00",
+      "budget": "standard",
+      "traveler_type": "general"
+    },
+    {
+      "trip_id": "demo-002",
+      "label": "Delhi -> Rome (family trip, accessibility needs)",
+      "origin": "Delhi",
+      "destination": "Rome",
+      "arrival_time": "2026-09-05T20:00:00",
+      "departure_time": "2026-09-01T04:30:00",
+      "budget": "premium",
+      "traveler_type": "family"
+    },
+    {
+      "trip_id": "demo-003",
+      "label": "Mumbai -> Tokyo (solo adventure, heatwave risk scenario)",
+      "origin": "Mumbai",
+      "destination": "Tokyo",
+      "arrival_time": "2026-08-15T14:00:00",
+      "departure_time": "2026-08-10T09:00:00",
+      "budget": "economy",
+      "traveler_type": "solo",
+      "notes": "heatwave advisory active for this window"
+    }
+  ],
+  "sample_hotels": [
+    {"name": "ITC Rajputana", "location": "City Center, Jaipur", "price_range": "$150-200/night", "rating": 4.7},
+    {"name": "Demo Budget Inn", "location": "Old City, Jaipur", "price_range": "$40-60/night", "rating": 4.1}
+  ],
+  "sample_restaurants": [
+    {"name": "Laxmi Misthan Bhandar", "cuisine": "Indian Sweets & Snacks", "price_range": "$5-10"},
+    {"name": "Suvarna Mahal", "cuisine": "Royal Rajasthani Fine Dining", "price_range": "$40-70"}
+  ],
+  "sample_activities": [
+    {"title": "Amber Fort Heritage Tour", "location": "Jaipur", "duration": "3 hours", "price": "$25-40"},
+    {"title": "Hawa Mahal Photography Walk", "location": "Jaipur", "duration": "1.5 hours", "price": "$10-15"}
+  ]
+}
