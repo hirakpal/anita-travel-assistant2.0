@@ -1,0 +1,9 @@
+# Optional extras for live RAG enrichment in Online mode
+# (rag/youtube_rag.py, rag/sim_currency_rag.py, rag/visa_rag.py).
+#
+# Not needed for Demo mode or for a basic Streamlit Cloud deployment - see
+# the note in requirements.txt. Install with:
+#   pip install -r requirements.txt -r requirements-online.txt
+
+pinecone-client>=3.2.2
+sentence-transformers>=2.2.0

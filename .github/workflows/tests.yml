@@ -25,11 +25,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pydantic pytest
-          # Note: sentence-transformers / pinecone-client are intentionally
-          # NOT installed here - the test suite runs entirely in Demo mode,
-          # and rag/*.py lazily imports those heavy deps only for Online
-          # mode, so CI stays fast and has zero external dependencies.
+          pip install -r requirements.txt -r requirements-dev.txt
+          # Note: requirements-online.txt (sentence-transformers /
+          # pinecone-client) is intentionally NOT installed here - the test
+          # suite runs entirely in Demo mode, and rag/*.py lazily imports
+          # those heavy deps only for Online mode, so CI stays fast.
 
       - name: Run test suite
         run: pytest tests/ -v

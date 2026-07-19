@@ -50,6 +50,15 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+`requirements.txt` is intentionally lean — it only lists packages actually imported by the app, with lower-bound (`>=`) version pins so pip/uv can always resolve a version with a prebuilt wheel for whatever Python version you're on (this matters for platforms like Streamlit Community Cloud, which regularly moves to newer Python versions before some packages publish wheels for them). Two optional extras:
+
+```bash
+pip install -r requirements-dev.txt      # pytest, for running the test suite
+pip install -r requirements-online.txt   # pinecone-client + sentence-transformers, for live RAG enrichment
+```
+
+`requirements-online.txt` is only needed if you want Online-mode RAG calls (`rag/youtube_rag.py` etc.) to actually hit Pinecone instead of gracefully skipping enrichment — every RAG call site already catches the missing-dependency case and logs a warning rather than crashing.
+
 ### Environment variables (Online mode only)
 
 Copy `.env.example` to `.env` and fill in the keys you have. Demo mode needs none of these.
@@ -70,6 +79,12 @@ streamlit run streamlit_ui.py
 # Minimal reference UI
 streamlit run main.py
 ```
+
+### Deploying to Streamlit Community Cloud
+
+Point it at `streamlit_ui.py` as the main module. If the build fails on an unrelated package needing a Rust/C compiler, it's almost always an old exact-pinned dependency lacking a prebuilt wheel for the Python version Streamlit Cloud picked — check `requirements.txt` first.
+
+Streamlit Cloud's `runtime.txt` Python-version pinning [is currently unreliable/ignored on some deployments](https://github.com/streamlit/streamlit/issues/15326) — if you need a specific Python version, set it explicitly via the app's **Settings → Python version** in the Streamlit Cloud dashboard rather than relying on `runtime.txt` alone (a `runtime.txt` pinning `3.12` is included here as a best-effort hint, per [Streamlit's docs](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/app-dependencies)).
 
 Or use the launcher scripts, which set up a venv and install dependencies automatically:
 

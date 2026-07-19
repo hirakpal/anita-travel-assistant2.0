@@ -1,0 +1,5 @@
+# Development/testing extras. Not needed to run the Streamlit app itself.
+#   pip install -r requirements.txt -r requirements-dev.txt
+#   pytest tests/ -v
+
+pytest>=8.2.2

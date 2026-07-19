@@ -1,37 +1,40 @@
-# Core UI and visualization
-streamlit==1.36.0
-pytest==8.2.2
-plotly==5.22.0
+# Core deployment requirements for the Streamlit app (streamlit_ui.py / main.py).
+#
+# Kept intentionally lean: every package below is actually imported somewhere
+# in the codebase. Version pins use lower-bound (>=) rather than exact (==)
+# constraints so pip/uv can resolve a version with a prebuilt wheel for
+# whatever Python version the deployment platform happens to be running -
+# exact old pins (e.g. tiktoken==0.7.0, pandas==2.2.2) previously forced
+# source builds requiring a Rust/C compiler on newer Python versions and
+# broke Streamlit Community Cloud deploys. Packages that were never imported
+# by any file in this repo (pandas, plotly, tiktoken, redis, structlog,
+# jsonschema) were removed entirely - see git history if you need them back.
 
-# Core HTTP requests
-requests==2.31.0
+# Core UI
+streamlit>=1.36.0
+
+# HTTP requests (Gemini/Google/AviationStack calls in agents/*.py)
+requests>=2.31.0
 
 # Environment variable management
-python-dotenv==1.0.1
+python-dotenv>=1.0.1
 
-# JSON parsing and validation
-jsonschema==4.22.0
-
-# Logging (built-in, but structlog adds structured logging if needed)
-structlog==24.1.0
-
-# Caching (optional, if you re‑add cache.py with Redis)
-redis==5.0.4
-
-# Token tracking / usage monitoring
-tiktoken==0.7.0
-
-# Data handling
-pandas==2.2.2
+# Data validation (utils/models.py, agents/impact_assessment_agent.py)
+pydantic>=2.0,<3.0
 
 # Date/time utilities
-python-dateutil==2.9.0.post0
+python-dateutil>=2.9.0
 
-# Typing support
-typing-extensions==4.12.2
+# Typing support (Python <3.10 compatibility for some typing features)
+typing-extensions>=4.12.2
 
-# Vector database for RAG
-pinecone-client==3.2.2
-
-# Sentence embeddings for RAG
-sentence-transformers>=2.2.0
+# --- Optional: only needed for Online-mode RAG features -------------------
+# (rag/youtube_rag.py, rag/sim_currency_rag.py, rag/visa_rag.py). These are
+# lazily imported only when Online mode actually queries the vector index,
+# and every call site already catches the ImportError and falls back
+# gracefully with a logged warning - so leaving these out is safe for
+# Demo-mode deployments (e.g. Streamlit Community Cloud) and keeps the
+# build fast and dependency-light. Install requirements-online.txt locally
+# if you need live RAG enrichment.
+# pinecone-client>=3.2.2
+# sentence-transformers>=2.2.0
