@@ -4,6 +4,7 @@ import logging
 import requests
 from rag.sim_currency_rag import query_entries, summarize_results
 from prompts.transport_prompt import TRANSPORT_PROMPT
+from utils.gemini_client import call_gemini
 
 logger = logging.getLogger(__name__)
 
@@ -38,34 +39,18 @@ class TransportAgent:
         # ONLINE MODE → Gemini API + RAG
         transport = []
         if self.provider == "gemini":
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if not api_key:
-                transport = [{"error": "GOOGLE_API_KEY not configured"}]
-            else:
-                try:
-                    resp = requests.post(
-                        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-                        headers={"x-goog-api-key": api_key},
-                        json={
-                            "contents": [{
-                                "parts": [{
-                                    "text": f"{self.prompt}\nOrigin: {origin}\nDestination: {destination}"
-                                }]
-                            }]
-                        },
-                        timeout=15
-                    )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    output_text = data["candidates"][0]["content"]["parts"][0]["text"]
-                    # For now, store raw Gemini output. Later, parse into structured JSON.
-                    transport = [{"raw_output": output_text}]
-                except requests.RequestException as e:
-                    logger.error(f"Gemini API error in TransportAgent: {e!r}")
-                    transport = [{"error": "Unable to fetch transport options from Gemini"}]
-                except (KeyError, IndexError) as e:
-                    logger.error(f"Unexpected Gemini response shape in TransportAgent: {e!r}")
-                    transport = [{"error": "Unexpected response from Gemini"}]
+            try:
+                output_text = call_gemini(f"{self.prompt}\nOrigin: {origin}\nDestination: {destination}")
+                # For now, store raw Gemini output. Later, parse into structured JSON.
+                transport = [{"raw_output": output_text}]
+            except ValueError as e:
+                transport = [{"error": str(e)}]
+            except requests.RequestException as e:
+                logger.error(f"Gemini API error in TransportAgent: {e!r}")
+                transport = [{"error": "Unable to fetch transport options from Gemini"}]
+            except (KeyError, IndexError) as e:
+                logger.error(f"Unexpected Gemini response shape in TransportAgent: {e!r}")
+                transport = [{"error": "Unexpected response from Gemini"}]
 
         # Append SIM/Currency RAG insights
         try:

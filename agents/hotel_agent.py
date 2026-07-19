@@ -4,6 +4,7 @@ import logging
 import requests
 from rag.youtube_rag import query_videos, summarize_results
 from prompts.hotel_prompt import HOTEL_PROMPT
+from utils.gemini_client import call_gemini
 
 logger = logging.getLogger(__name__)
 
@@ -39,35 +40,20 @@ class HotelAgent:
         # ONLINE MODE → Gemini API
         hotels = []
         if self.provider == "gemini":
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if not api_key:
-                hotels = [{"error": "GOOGLE_API_KEY not configured"}]
-            else:
-                try:
-                    resp = requests.post(
-                        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-                        headers={"x-goog-api-key": api_key},
-                        json={
-                            "contents": [{
-                                "parts": [{
-                                    "text": f"{self.prompt}\nDestination: {destination}\nTraveler profile: {state.get('profile','General')}"
-                                }]
-                            }]
-                        },
-                        timeout=15
-                    )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    output_text = data["candidates"][0]["content"]["parts"][0]["text"]
-
-                    # For now, store raw Gemini output. Later, parse into structured JSON.
-                    hotels = [{"raw_output": output_text}]
-                except requests.RequestException as e:
-                    logger.error(f"Gemini API error in HotelAgent: {e!r}")
-                    hotels = [{"error": "Unable to fetch hotels from Gemini"}]
-                except (KeyError, IndexError) as e:
-                    logger.error(f"Unexpected Gemini response shape in HotelAgent: {e!r}")
-                    hotels = [{"error": "Unexpected response from Gemini"}]
+            try:
+                output_text = call_gemini(
+                    f"{self.prompt}\nDestination: {destination}\nTraveler profile: {state.get('profile','General')}"
+                )
+                # For now, store raw Gemini output. Later, parse into structured JSON.
+                hotels = [{"raw_output": output_text}]
+            except ValueError as e:
+                hotels = [{"error": str(e)}]
+            except requests.RequestException as e:
+                logger.error(f"Gemini API error in HotelAgent: {e!r}")
+                hotels = [{"error": "Unable to fetch hotels from Gemini"}]
+            except (KeyError, IndexError) as e:
+                logger.error(f"Unexpected Gemini response shape in HotelAgent: {e!r}")
+                hotels = [{"error": "Unexpected response from Gemini"}]
 
         # Append YouTube RAG insights
         try:

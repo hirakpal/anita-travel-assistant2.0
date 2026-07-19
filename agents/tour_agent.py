@@ -1,5 +1,5 @@
 #agents/tour_agent.py
-import os, requests
+import logging
 from utils.parsers import (
     parse_tours_output,
     parse_alerts_output,
@@ -12,6 +12,9 @@ from prompts.alerts_prompt import ALERTS_PROMPT
 from prompts.events_prompt import EVENTS_PROMPT
 from prompts.locations_prompt import LOCATIONS_PROMPT
 from prompts.news_prompt import NEWS_PROMPT
+from utils.gemini_client import call_gemini
+
+logger = logging.getLogger(__name__)
 
 class TourAgent:
     def __init__(self, name="TourAgent", mode="Online", provider="gemini"):
@@ -25,16 +28,7 @@ class TourAgent:
         self.prompt_news = NEWS_PROMPT
 
     def _call_gemini(self, prompt, destination):
-        api_key = os.getenv("GOOGLE_API_KEY")
-        resp = requests.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-            headers={"Authorization": f"Bearer {api_key}"},
-            json={"contents": [{"parts": [{"text": f"{prompt}\nDestination: {destination}"}]}]},
-            timeout=15
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        return call_gemini(f"{prompt}\nDestination: {destination}")
 
     def run(self, state):
         if not state.get("destination"):
@@ -83,5 +77,5 @@ class TourAgent:
             }
 
         except Exception as e:
-            print(f"⚠️ Gemini API error: {e!r}")
+            logger.error(f"Gemini API error in TourAgent: {e!r}")
             return {"tour_summary": {"error": "Unable to fetch tour data"}}

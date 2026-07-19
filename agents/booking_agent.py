@@ -1,8 +1,10 @@
 #agents/booking_agent.py
-import os
-import requests
+import logging
 from utils.parsers import parse_booking_output
 from prompts.booking_prompt import BOOKING_PROMPT
+from utils.gemini_client import call_gemini
+
+logger = logging.getLogger(__name__)
 
 class BookingAgent:
     def __init__(self, name="BookingAgent", mode="Online", provider="gemini"):
@@ -31,28 +33,15 @@ class BookingAgent:
 
         # ONLINE MODE → Gemini API
         if self.provider == "gemini":
-            api_key = os.getenv("GOOGLE_API_KEY")
             try:
-                resp = requests.post(
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    json={
-                        "contents": [{
-                            "parts": [{
-                                "text": f"{self.prompt}\nState: {state}"
-                            }]
-                        }]
-                    },
-                    timeout=15
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                output_text = data["candidates"][0]["content"]["parts"][0]["text"]
+                output_text = call_gemini(f"{self.prompt}\nState: {state}")
 
                 # Parse Gemini output into structured list of bookings
                 parsed_bookings = parse_booking_output(output_text)
                 return {"booking": parsed_bookings}
 
+            except ValueError as e:
+                return {"booking": [{"error": str(e)}]}
             except Exception as e:
-                print(f"⚠️ Gemini API error: {e!r}")
+                logger.error(f"Gemini API error in BookingAgent: {e!r}")
                 return {"booking": [{"error": "Unable to fetch booking confirmation from Gemini"}]}

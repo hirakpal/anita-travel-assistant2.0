@@ -4,6 +4,7 @@ import logging
 import requests
 from rag.youtube_rag import query_videos, summarize_results
 from prompts.food_prompt import FOOD_PROMPT
+from utils.gemini_client import call_gemini
 
 logger = logging.getLogger(__name__)
 
@@ -39,35 +40,20 @@ class FoodAgent:
         # ONLINE MODE → Gemini API
         restaurants = []
         if self.provider == "gemini":
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if not api_key:
-                restaurants = [{"error": "GOOGLE_API_KEY not configured"}]
-            else:
-                try:
-                    resp = requests.post(
-                        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-                        headers={"x-goog-api-key": api_key},
-                        json={
-                            "contents": [{
-                                "parts": [{
-                                    "text": f"{self.prompt}\nDestination: {destination}\nFood preferences: {state.get('preferences','General')}"
-                                }]
-                            }]
-                        },
-                        timeout=15
-                    )
-                    resp.raise_for_status()
-                    data = resp.json()
-                    output_text = data["candidates"][0]["content"]["parts"][0]["text"]
-
-                    # For now, store raw Gemini output. Later, parse into structured JSON.
-                    restaurants = [{"raw_output": output_text}]
-                except requests.RequestException as e:
-                    logger.error(f"Gemini API error in FoodAgent: {e!r}")
-                    restaurants = [{"error": "Unable to fetch restaurants from Gemini"}]
-                except (KeyError, IndexError) as e:
-                    logger.error(f"Unexpected Gemini response shape in FoodAgent: {e!r}")
-                    restaurants = [{"error": "Unexpected response from Gemini"}]
+            try:
+                output_text = call_gemini(
+                    f"{self.prompt}\nDestination: {destination}\nFood preferences: {state.get('preferences','General')}"
+                )
+                # For now, store raw Gemini output. Later, parse into structured JSON.
+                restaurants = [{"raw_output": output_text}]
+            except ValueError as e:
+                restaurants = [{"error": str(e)}]
+            except requests.RequestException as e:
+                logger.error(f"Gemini API error in FoodAgent: {e!r}")
+                restaurants = [{"error": "Unable to fetch restaurants from Gemini"}]
+            except (KeyError, IndexError) as e:
+                logger.error(f"Unexpected Gemini response shape in FoodAgent: {e!r}")
+                restaurants = [{"error": "Unexpected response from Gemini"}]
 
         # Append YouTube RAG insights
         try:
